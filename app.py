@@ -99,8 +99,6 @@ def process_request(request):
         except IndexError:
             j = {'launch_time': time.time()}
         total = (time.time() - (j['launch_time'] or time.time())) * 1000
-        if total > queue_time:
-            queue_time = total
         total = _format_time(total)
         counter += 1
         change_data = {'number': counter,
@@ -139,9 +137,12 @@ def process_request(request):
                 shortname = shortname.split('centos-7-')[1]
             elapsed = _format_time(job['elapsed_time'])
             style = 'color: %s; font-weight: %s' % (color, weight)
+            queue_time = job_counter * 2 * 60 * 1000
+            etr = _format_time(queue_time)
             job_counter += 1
             job_data = {'number': job_counter,
                         'elapsed': elapsed,
+                        'etr': etr,
                         'name': shortname,
                         'link': link,
                         'style': style,

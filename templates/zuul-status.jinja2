@@ -73,7 +73,7 @@ function ood()
         <tr>
         {% for job in change.jobs %}
             <td><a href='{{job.link}}' style='{{job.style}}'>{{job.name}}</a><br>
-            {{job.elapsed}}</td>
+            {{job.elapsed}}/{{job.etr}}</td>
         {% endfor %}
         </tr>
         </table>
