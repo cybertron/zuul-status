@@ -158,6 +158,7 @@ def process_request(request):
     values['complete'] = complete
     values['total'] = running + queued + complete
     values['queue_time'] = _format_time(queue_time)
+    values['queue_name'] = queue_name
 
     return t, values
 
