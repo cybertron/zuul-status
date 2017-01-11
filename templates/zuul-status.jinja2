@@ -1,0 +1,85 @@
+<html>
+<head>
+    <title>Zuul Queue Status</title>
+
+<style type='text/css'>
+a:link {color:#808080; text-decoration:none;}
+a:visited {color:#808080; text-decoration:none;}
+a:hover {color:#808080; text-decoration:underline;}
+a:active {color:#808080;}
+html *
+{
+    font-family: Arial;
+}
+body
+{
+    background-image: url('http://tripleo.org/_static/header_bg.jpg');
+    background-repeat: repeat-x;
+}
+.sectionarea
+{
+    border: 5px solid #808080;
+    -moz-border-radius:15px;
+    border-radius:15px;
+    margin: 5px;
+    background: #e5e5e5;
+    font-size: 12px;
+}
+.jobinfo
+{
+    background-color: #d5d5d5;
+    font-size: 12px;
+}
+table
+{
+    border-spacing: 10px 0px;
+}
+td
+{
+    padding: 1px;
+}
+</style>
+
+<script type='text/javascript'>
+function ood()
+{
+    document.getElementById('ood_message').style.display = 'block';
+}
+</script>
+
+</head>
+<body>
+<center>
+<a href='http://tripleo.org'><img src='http://tripleo.org/_static/tripleo_owl.svg' style='max-height: 100px'/></a>
+<h1><a href='/'>Zuul Queue Status</a></h1>
+<table class='sectionarea'>
+<tr><td>Running</td><td>Queued</td><td>Complete</td><td>Total</td><td>Time</td></tr>
+<tr><td>{{running}}</td><td>{{queued}}</td><td>{{complete}}</td><td>{{total}}</td><td>{{queue_time}}</td></tr>
+</table>
+<table class='sectionarea'>
+    <tr>
+        <td>#</td><td>Elapsed</td><td>Change #</td><td>Project</td><td>User</td>
+    </tr>
+{% for change in changes %}
+    <tr>
+        <td>{{change.number}}</td>
+        <td>{{change.total}}</td>
+        <td><a href='{{change.url}}'>{{change.id}}</a></td>
+        <td>{{change.project}}</td>
+        <td>{{change.user}}</td>
+    </tr>
+    <tr><td colspan='999'>
+        <table class='jobinfo'>
+        <tr>
+        {% for job in change.jobs %}
+            <td><a href='{{job.link}}' style='{{job.style}}'>{{job.name}}</a><br>
+            {{job.elapsed}}</td>
+        {% endfor %}
+        </tr>
+        </table>
+    </td></tr>
+{% endfor %}
+</table>
+</center>
+</body>
+</html>
