@@ -92,6 +92,8 @@ def process_request(request):
     values = {}
     values['changes'] = []
     for change in pipeline['change_queues']:
+        if len(change['heads']) == 0:
+            continue
         data = change['heads'][0][-1]
         url = data['url']
         try:
@@ -133,7 +135,7 @@ def process_request(request):
             else:
                 queued += 1
             shortname = job['name']
-            if 'centos-7' in job['name']:
+            if 'centos-7-' in job['name']:
                 shortname = shortname.split('centos-7-')[1]
             elapsed = _format_time(job['elapsed_time'])
             style = 'color: %s; font-weight: %s' % (color, weight)
