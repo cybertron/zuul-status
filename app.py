@@ -139,12 +139,13 @@ def process_request(request):
                 shortname = shortname.split('centos-7-')[1]
             elapsed = _format_time(job['elapsed_time'])
             style = 'color: %s; font-weight: %s' % (color, weight)
-            queue_time = job_counter * 2 * 60 * 1000
-            etr = _format_time(queue_time)
+            queue_time = (job_counter - complete) * 2 * 60 * 1000
+            # Estimated time to complete
+            etc = _format_time(max(queue_time, 0))
             job_counter += 1
             job_data = {'number': job_counter,
                         'elapsed': elapsed,
-                        'etr': etr,
+                        'etc': etc,
                         'name': shortname,
                         'link': link,
                         'style': style,

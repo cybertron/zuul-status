@@ -87,7 +87,7 @@ function ood()
         <tr>
         {% for job in change.jobs %}
             <td><a href='{{job.link}}' style='{{job.style}}'>{{job.name}}</a><br>
-            {{job.elapsed}}/{{job.etr}}</td>
+            {{job.elapsed}}/{{job.etc}}</td>
             {% if loop.index is divisibleby 8 %}
                 </tr><tr>
             {% endif %}
