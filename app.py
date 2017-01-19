@@ -110,11 +110,6 @@ def process_request(request):
                        'project': data['project'],
                        'user': data['owner']['username'],
                        }
-        #print fstr % (counter,
-                      #total,
-                      #url,
-                      #data['project'],
-                      #data['owner']['username'])
 
         change_data['jobs'] = []
         for job in data['jobs']:
@@ -151,10 +146,6 @@ def process_request(request):
                         'style': style,
                         }
             change_data['jobs'].append(job_data)
-            #print color + style + fstr % (job_counter,
-                                          #elapsed,
-                                          #shortname,
-                                          #link)
         values['changes'].append(change_data)
     values['running'] = running
     values['queued'] = queued
