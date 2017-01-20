@@ -41,6 +41,10 @@ from pyramid import view
 from wsgiref.simple_server import make_server
 
 
+JOB_TIME_HOURS = 1.83333
+MAX_JOBS = 65.
+
+
 def _get_zuul_status():
     req = urllib2.Request('http://zuul.openstack.org/status.json')
     req.add_header('Accept-encoding', 'gzip')
@@ -134,7 +138,10 @@ def process_request(request):
                 shortname = shortname.split('centos-7-')[1]
             elapsed = _format_time(job['elapsed_time'])
             style = 'color: %s; font-weight: %s' % (color, weight)
-            queue_time = (job_counter - complete) * 2 * 60 * 1000
+            # At max capacity, a job should finish once per completion_rate
+            # minutes on average.
+            completion_rate = 60. / (MAX_JOBS / JOB_TIME_HOURS)
+            queue_time = int((job_counter - complete) * completion_rate * 60 * 1000)
             # Estimated time to complete
             etc = _format_time(max(queue_time, 0))
             job_counter += 1
