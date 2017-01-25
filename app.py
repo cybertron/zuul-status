@@ -42,7 +42,7 @@ from wsgiref.simple_server import make_server
 
 
 JOB_TIME_HOURS = 1.83333
-MAX_JOBS = 65.
+MAX_JOBS = 70.
 
 
 def _get_zuul_status():
