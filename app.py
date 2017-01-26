@@ -30,6 +30,7 @@ import json
 import sys
 import time
 import urllib2
+import yaml
 # hack to make sure we can load wsgi.py as a module in this class
 sys.path.insert(0, os.path.dirname(__file__))
 
@@ -42,26 +43,47 @@ from wsgiref.simple_server import make_server
 
 
 JOB_TIME_HOURS = 1.83333
-MAX_JOBS = 70.
+TRIPLEO_TEST_CLOUDS = ['tripleo-test-cloud-rh1', 'tripleo-test-cloud-rh2']
 
 
-def _get_zuul_status():
-    req = urllib2.Request('http://zuul.openstack.org/status.json')
+def _get_remote_data(address, datatype='json'):
+    req = urllib2.Request(address)
     req.add_header('Accept-encoding', 'gzip')
-    zuul = urllib2.urlopen(req, timeout=60)
+    remote_data = urllib2.urlopen(req, timeout=60)
     data = ""
     while True:
-        chunk = zuul.read()
+        chunk = remote_data.read()
         if not chunk:
             break
         data += chunk
 
-    if zuul.info().get('Content-Encoding') == 'gzip':
+    if remote_data.info().get('Content-Encoding') == 'gzip':
         buf = cStringIO.StringIO(data)
         f = gzip.GzipFile(fileobj=buf)
         data = f.read()
 
-    return json.loads(data)
+    if datatype == 'json':
+        return json.loads(data)
+    else:
+        return yaml.safe_load(data)
+
+
+def _get_zuul_status():
+    return _get_remote_data('http://zuul.openstack.org/status.json')
+
+
+def _get_max_jobs():
+    """Read max jobs from the nodepool config"""
+    # TODO(bnemec): Cache this data, as it doesn't change often
+    data = _get_remote_data('http://git.openstack.org/cgit/openstack-infra/project-config/plain/nodepool/nodepool.yaml',
+                            'yaml')
+    print data.keys()
+    providers = data['providers']
+    max_jobs = 0
+    for cloud in TRIPLEO_TEST_CLOUDS:
+        current = [c for c in providers if c['name'] == cloud][0]
+        max_jobs += current['max-servers']
+    return max_jobs
 
 
 def _format_time(ms):
@@ -84,6 +106,7 @@ def process_request(request):
     t = env.get_template('zuul-status.jinja2')
 
     zuul_data = _get_zuul_status()
+    max_jobs = _get_max_jobs()
     queue_name = request.params.get('queue', 'check-tripleo')
     pipeline = [p for p in zuul_data['pipelines']
                 if p['name'] == queue_name][0]
@@ -140,7 +163,7 @@ def process_request(request):
             style = 'color: %s; font-weight: %s' % (color, weight)
             # At max capacity, a job should finish once per completion_rate
             # minutes on average.
-            completion_rate = 60. / (MAX_JOBS / JOB_TIME_HOURS)
+            completion_rate = 60. / (float(max_jobs) / JOB_TIME_HOURS)
             queue_time = int((job_counter - complete) * completion_rate * 60 * 1000)
             # Estimated time to complete
             etc = _format_time(max(queue_time, 0))
@@ -155,7 +178,7 @@ def process_request(request):
             change_data['jobs'].append(job_data)
         values['changes'].append(change_data)
     values['running'] = running
-    values['max_jobs'] = int(MAX_JOBS)
+    values['max_jobs'] = int(max_jobs)
     values['queued'] = queued
     values['complete'] = complete
     values['active'] = running + queued
