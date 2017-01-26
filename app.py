@@ -45,6 +45,9 @@ from wsgiref.simple_server import make_server
 JOB_TIME_HOURS = 1.83333
 TRIPLEO_TEST_CLOUDS = ['tripleo-test-cloud-rh1', 'tripleo-test-cloud-rh2']
 
+max_jobs_last_update = 0
+max_jobs_cache = 0
+
 
 def _get_remote_data(address, datatype='json'):
     req = urllib2.Request(address)
@@ -74,15 +77,21 @@ def _get_zuul_status():
 
 def _get_max_jobs():
     """Read max jobs from the nodepool config"""
-    # TODO(bnemec): Cache this data, as it doesn't change often
+    # Only refresh data every 30 minutes
+    global max_jobs_last_update, max_jobs_cache
+    if time.time() - max_jobs_last_update < 30 * 60:
+        return max_jobs_cache
+
+    print 'Refreshing nodepool data'
     data = _get_remote_data('http://git.openstack.org/cgit/openstack-infra/project-config/plain/nodepool/nodepool.yaml',
                             'yaml')
-    print data.keys()
     providers = data['providers']
     max_jobs = 0
     for cloud in TRIPLEO_TEST_CLOUDS:
         current = [c for c in providers if c['name'] == cloud][0]
         max_jobs += current['max-servers']
+    max_jobs_last_update = time.time()
+    max_jobs_cache = max_jobs
     return max_jobs
 
 
