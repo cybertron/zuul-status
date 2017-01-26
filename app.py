@@ -155,6 +155,7 @@ def process_request(request):
             change_data['jobs'].append(job_data)
         values['changes'].append(change_data)
     values['running'] = running
+    values['max_jobs'] = int(MAX_JOBS)
     values['queued'] = queued
     values['complete'] = complete
     values['active'] = running + queued
