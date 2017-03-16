@@ -42,7 +42,7 @@ from pyramid import view
 from wsgiref.simple_server import make_server
 
 
-JOB_TIME_HOURS = 1.83333
+JOB_TIME_HOURS = 1.95
 TRIPLEO_TEST_CLOUDS = ['tripleo-test-cloud-rh1', 'tripleo-test-cloud-rh2']
 
 max_jobs_last_update = 0
