@@ -55,7 +55,7 @@ max_jobs_cache = 0
 def _get_remote_data(address, datatype='json'):
     req = urllib2.Request(address)
     req.add_header('Accept-encoding', 'gzip')
-    remote_data = urllib2.urlopen(req, timeout=60)
+    remote_data = urllib2.urlopen(req, timeout=10)
     data = ""
     while True:
         chunk = remote_data.read()
