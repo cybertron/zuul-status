@@ -173,7 +173,15 @@ def process_request(request):
             # At max capacity, a job should finish once per completion_rate
             # minutes on average.
             completion_rate = 60. / (float(max_jobs) / JOB_TIME_HOURS)
-            queue_time = int((job_counter - complete) * completion_rate * 60 * 1000)
+            if not job['elapsed_time']:
+                queue_time = int((job_counter - complete) * completion_rate * 60 * 1000)
+            else:
+                if job['result']:
+                    queue_time = 0
+                else:
+                    queue_time = JOB_TIME_HOURS * 60 * 60 * 1000 - job['elapsed_time']
+            if queue_name not in ['check-tripleo', 'experimental-tripleo']:
+                queue_time = 0
             # Estimated time to complete
             etc = _format_time(max(queue_time, 0))
             job_counter += 1
