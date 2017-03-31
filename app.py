@@ -46,7 +46,7 @@ from wsgiref.simple_server import make_server
 GRAPHITE_TIME_HOURS = 1.95
 # Add about 15 minutes for the stuff that happens before and after
 JOB_TIME_HOURS = GRAPHITE_TIME_HOURS + .25
-TRIPLEO_TEST_CLOUDS = ['tripleo-test-cloud-rh1', 'tripleo-test-cloud-rh2']
+TRIPLEO_TEST_CLOUDS = ['tripleo-test-cloud-rh1']
 
 max_jobs_last_update = 0
 max_jobs_cache = 0
