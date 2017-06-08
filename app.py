@@ -43,7 +43,7 @@ from wsgiref.simple_server import make_server
 
 # This is the ci total runtime reported in Graphite, which only includes the
 # tripleo deployment bits
-GRAPHITE_TIME_HOURS = 1.95
+GRAPHITE_TIME_HOURS = 2.22
 # Add about 15 minutes for the stuff that happens before and after
 JOB_TIME_HOURS = GRAPHITE_TIME_HOURS + .25
 TRIPLEO_TEST_CLOUDS = ['tripleo-test-cloud-rh1']
