@@ -52,10 +52,18 @@ max_jobs_last_update = 0
 max_jobs_cache = 0
 
 
+class DataRetrievalFailed(Exception):
+    pass
+
+
 def _get_remote_data(address, datatype='json'):
     req = urllib2.Request(address)
     req.add_header('Accept-encoding', 'gzip')
-    remote_data = urllib2.urlopen(req, timeout=10)
+    try:
+        remote_data = urllib2.urlopen(req, timeout=10)
+    except Exception as e:
+        msg = 'Failed to retrieve data from %s: %s' % (address, str(e))
+        raise DataRetrievalFailed(msg)
     data = ""
     while True:
         chunk = remote_data.read()
@@ -117,8 +125,12 @@ def process_request(request):
     env = jinja2.Environment(loader=loader)
     t = env.get_template('zuul-status.jinja2')
 
-    zuul_data = _get_zuul_status()
-    max_jobs = _get_max_jobs()
+    try:
+        zuul_data = _get_zuul_status()
+        max_jobs = _get_max_jobs()
+    except Exception as e:
+        values = {'error': str(e)}
+        return t, values
     queue_name = request.params.get('queue', 'check-tripleo')
     pipeline = [p for p in zuul_data['pipelines']
                 if p['name'] == queue_name][0]

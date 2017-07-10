@@ -47,6 +47,11 @@ td
 <body>
 <center>
 <a href='http://tripleo.org'><img src='http://tripleo.org/_static/tripleo_owl.svg' style='max-height: 100px'/></a>
+{% if error %}
+<h1><a href=''>Zuul Queue Status - Error</a></h1>
+Failed to retrieve queue status due to error:<br>
+{{error}}
+{% else %}
 <h1><a href=''>Zuul Queue Status - {{queue_name}}</a></h1>
 <table class='sectionarea'>
 <tr>
@@ -100,5 +105,6 @@ View other queues:<br>
 <a href='/?queue=check'>check</a><br>
 <a href='/?queue=gate'>gate</a><br>
 </center>
+{% endif %}
 </body>
 </html>
