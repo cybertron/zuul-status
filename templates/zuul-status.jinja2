@@ -62,7 +62,11 @@ Failed to retrieve queue status due to error:<br>
     <td>Total</td>
     <td>Time</td></tr>
 <tr>
+    {% if queue_name == 'check-tripleo' %}
     <td>{{running}}/{{max_jobs}}</td>
+    {% else %}
+    <td>{{running}}</td>
+    {% endif %}
     <td>{{queued}}</td>
     <td>{{complete}}</td>
     <td>{{active}}</td>
