@@ -66,7 +66,8 @@ Failed to retrieve queue status due to error:<br>
     <td style='font-weight: bold'>Complete</td>
     <td>Active</td>
     <td>Total</td>
-    <td>Time</td></tr>
+    {% if queue_name == 'check-tripleo' %}<td>Time</td>{% endif %}
+</tr>
 <tr>
     {% if queue_name == 'check-tripleo' %}
     <td>{{running}}/{{max_jobs}}</td>
@@ -77,7 +78,7 @@ Failed to retrieve queue status due to error:<br>
     <td>{{complete}}</td>
     <td>{{active}}</td>
     <td>{{total}}</td>
-    <td>{{queue_time}}</td>
+    {% if queue_name == 'check-tripleo' %}<td>{{queue_time}}</td>{% endif %}
 </tr>
 </table>
 <table class='sectionarea'>
