@@ -47,6 +47,10 @@ GRAPHITE_TIME_HOURS = 2.22
 # Add about 15 minutes for the stuff that happens before and after
 JOB_TIME_HOURS = GRAPHITE_TIME_HOURS + .25
 TRIPLEO_TEST_CLOUDS = ['tripleo-test-cloud-rh1']
+# Base color codes
+RED='be1400'
+GREEN='008800'
+BLUE='1400be'
 
 max_jobs_last_update = 0
 max_jobs_cache = 0
@@ -164,15 +168,15 @@ def process_request(request):
 
             change_data['jobs'] = []
             for job in data['jobs']:
-                color = 'blue'
+                color = BLUE
                 weight = 'normal'
                 link = job['url'] or ''
                 if job['elapsed_time'] is not None:
                     result = job['result']
-                    color = 'green'
+                    color = GREEN
                     if result is not None:
                         if result == 'FAILURE':
-                            color = 'red'
+                            color = RED
                         weight = 'bold'
                         link = job['report_url']
                         complete += 1
@@ -217,6 +221,9 @@ def process_request(request):
     values['total'] = running + queued + complete
     values['queue_time'] = _format_time(queue_time)
     values['queue_name'] = queue_name
+    values['job_red'] = RED
+    values['job_green'] = GREEN
+    values['job_blue'] = BLUE
 
     return t, values
 

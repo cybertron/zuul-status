@@ -25,12 +25,18 @@ body
 }
 .jobinfo
 {
-    background-color: #e5e5e5;
+    background-color: #f2f2f2;
     font-size: 12px;
 }
-.jobinfo tr:nth-child(even)
+.jobtitle-blue
 {
-    background: #d5d5d5;
+    background-color: #f2f2ff;
+    font-size: 12px;
+}
+.jobtitle-green
+{
+    background-color: #f2fff2;
+    font-size: 12px;
 }
 table
 {
@@ -55,8 +61,8 @@ Failed to retrieve queue status due to error:<br>
 <h1><a href=''>Zuul Queue Status - {{queue_name}}</a></h1>
 <table class='sectionarea'>
 <tr>
-    <td style='color: green'>Running</td>
-    <td style='color: blue'>Queued</td>
+    <td style='color: {{job_green}}'>Running</td>
+    <td style='color: {{job_blue}}'>Queued</td>
     <td style='font-weight: bold'>Complete</td>
     <td>Active</td>
     <td>Total</td>
@@ -79,7 +85,11 @@ Failed to retrieve queue status due to error:<br>
         <td>#</td><td>Elapsed</td><td>Change #</td><td>Project</td><td>User</td>
     </tr>
 {% for change in changes %}
-    <tr>
+    {% if (change.number - 1) is divisibleby 2 %}
+    <tr class='jobtitle-blue'>
+    {% else %}
+    <tr class='jobtitle-green'>
+    {% endif %}
         <td>{{change.number}}</td>
         <td>{{change.total}}</td>
         <td><a href='{{change.url}}'>{{change.id}}</a></td>
