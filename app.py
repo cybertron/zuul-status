@@ -145,70 +145,70 @@ def process_request(request):
     for change in pipeline['change_queues']:
         if len(change['heads']) == 0:
             continue
-        data = change['heads'][0][-1]
-        url = data['url']
-        try:
-            j = data['jobs'][0]
-        except IndexError:
-            j = {'launch_time': time.time()}
-        total = (time.time() - (j['launch_time'] or time.time())) * 1000
-        total = _format_time(total)
         counter += 1
-        change_data = {'number': counter,
-                       'total': total,
-                       'id': data['id'],
-                       'url': url,
-                       'project': data['project'],
-                       'user': data['owner']['username'],
-                       }
-
-        change_data['jobs'] = []
-        for job in data['jobs']:
-            color = 'blue'
-            weight = 'normal'
-            link = job['url'] or ''
-            if job['elapsed_time'] is not None:
-                result = job['result']
-                color = 'green'
-                if result is not None:
-                    if result == 'FAILURE':
-                        color = 'red'
-                    weight = 'bold'
-                    link = job['report_url']
-                    complete += 1
-                else:
-                    running += 1
-            else:
-                queued += 1
-            shortname = job['name']
-            if 'centos-7-' in job['name']:
-                shortname = shortname.split('centos-7-')[1]
-            elapsed = _format_time(job['elapsed_time'])
-            style = 'color: %s; font-weight: %s' % (color, weight)
-            # At max capacity, a job should finish once per completion_rate
-            # minutes on average.
-            completion_rate = 60. / (float(max_jobs) / JOB_TIME_HOURS)
-            if not job['elapsed_time']:
-                queue_time = int((job_counter - complete) * completion_rate * 60 * 1000)
-            else:
-                if job['result']:
-                    queue_time = 0
-                else:
-                    queue_time = JOB_TIME_HOURS * 60 * 60 * 1000 - job['elapsed_time']
-            if queue_name not in ['check-tripleo', 'experimental-tripleo']:
-                queue_time = 0
-            # Estimated time to complete
-            etc = _format_time(max(queue_time, 0))
-            job_counter += 1
-            job_data = {'number': job_counter,
-                        'elapsed': elapsed,
-                        'etc': etc,
-                        'name': shortname,
-                        'link': link,
-                        'style': style,
+        for data in change['heads'][0]:
+            url = data['url']
+            try:
+                j = data['jobs'][0]
+            except IndexError:
+                j = {'launch_time': time.time()}
+            total = (time.time() - (j['launch_time'] or time.time())) * 1000
+            total = _format_time(total)
+            change_data = {'number': counter,
+                        'total': total,
+                        'id': data['id'],
+                        'url': url,
+                        'project': data['project'],
+                        'user': data['owner']['username'],
                         }
-            change_data['jobs'].append(job_data)
-        values['changes'].append(change_data)
+
+            change_data['jobs'] = []
+            for job in data['jobs']:
+                color = 'blue'
+                weight = 'normal'
+                link = job['url'] or ''
+                if job['elapsed_time'] is not None:
+                    result = job['result']
+                    color = 'green'
+                    if result is not None:
+                        if result == 'FAILURE':
+                            color = 'red'
+                        weight = 'bold'
+                        link = job['report_url']
+                        complete += 1
+                    else:
+                        running += 1
+                else:
+                    queued += 1
+                shortname = job['name']
+                if 'centos-7-' in job['name']:
+                    shortname = shortname.split('centos-7-')[1]
+                elapsed = _format_time(job['elapsed_time'])
+                style = 'color: %s; font-weight: %s' % (color, weight)
+                # At max capacity, a job should finish once per completion_rate
+                # minutes on average.
+                completion_rate = 60. / (float(max_jobs) / JOB_TIME_HOURS)
+                if not job['elapsed_time']:
+                    queue_time = int((job_counter - complete) * completion_rate * 60 * 1000)
+                else:
+                    if job['result']:
+                        queue_time = 0
+                    else:
+                        queue_time = JOB_TIME_HOURS * 60 * 60 * 1000 - job['elapsed_time']
+                if queue_name not in ['check-tripleo', 'experimental-tripleo']:
+                    queue_time = 0
+                # Estimated time to complete
+                etc = _format_time(max(queue_time, 0))
+                job_counter += 1
+                job_data = {'number': job_counter,
+                            'elapsed': elapsed,
+                            'etc': etc,
+                            'name': shortname,
+                            'link': link,
+                            'style': style,
+                            }
+                change_data['jobs'].append(job_data)
+            values['changes'].append(change_data)
     values['running'] = running
     values['max_jobs'] = int(max_jobs)
     values['queued'] = queued
