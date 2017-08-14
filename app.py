@@ -155,11 +155,13 @@ def process_request(request):
             if len(change['heads'][0]) > 1:
                 queue_counter += 1
             url = data['url']
+            # Read it once so it's consistent
+            current_time = time.time()
             try:
                 j = data['jobs'][0]
             except IndexError:
-                j = {'launch_time': time.time()}
-            total = (time.time() - (j['launch_time'] or time.time())) * 1000
+                j = {'launch_time': current_time}
+            total = (current_time - (j['launch_time'] or current_time)) * 1000
             total = _format_time(total)
             change_data = {'number': counter,
                            'queue_number': queue_counter,
