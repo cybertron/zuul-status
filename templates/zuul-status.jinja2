@@ -91,7 +91,7 @@ Failed to retrieve queue status due to error:<br>
     {% else %}
     <tr class='jobtitle-green'>
     {% endif %}
-        <td>{{change.number}}</td>
+        <td>{{change.number}}{% if change.queue_number > 0 %} ({{change.queue_number}}){% endif %}</td>
         <td>{{change.total}}</td>
         <td><a href='{{change.url}}'>{{change.id}}</a></td>
         <td>{{change.project}}</td>

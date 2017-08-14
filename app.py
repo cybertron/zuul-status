@@ -150,7 +150,10 @@ def process_request(request):
         if len(change['heads']) == 0:
             continue
         counter += 1
+        queue_counter = 0
         for data in change['heads'][0]:
+            if len(change['heads'][0]) > 1:
+                queue_counter += 1
             url = data['url']
             try:
                 j = data['jobs'][0]
@@ -159,12 +162,13 @@ def process_request(request):
             total = (time.time() - (j['launch_time'] or time.time())) * 1000
             total = _format_time(total)
             change_data = {'number': counter,
-                        'total': total,
-                        'id': data['id'],
-                        'url': url,
-                        'project': data['project'],
-                        'user': data['owner']['username'],
-                        }
+                           'queue_number': queue_counter,
+                           'total': total,
+                           'id': data['id'],
+                           'url': url,
+                           'project': data['project'],
+                           'user': data['owner']['username'],
+                           }
 
             change_data['jobs'] = []
             for job in data['jobs']:
