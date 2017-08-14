@@ -28,15 +28,19 @@ body
     background-color: #f2f2f2;
     font-size: 12px;
 }
-.jobtitle-blue
+.jobtitle-purple
 {
-    background-color: #f2f2ff;
+    background-color: #fff;
+    color: #7300be;
     font-size: 12px;
+    font-weight: bold;
 }
-.jobtitle-green
+.jobtitle-black
 {
-    background-color: #f2fff2;
+    background-color: #fff;
+    color: #000000;
     font-size: 12px;
+    font-weight: bold;
 }
 table
 {
@@ -87,9 +91,9 @@ Failed to retrieve queue status due to error:<br>
     </tr>
 {% for change in changes %}
     {% if (change.number - 1) is divisibleby 2 %}
-    <tr class='jobtitle-blue'>
+    <tr class='jobtitle-purple'>
     {% else %}
-    <tr class='jobtitle-green'>
+    <tr class='jobtitle-black'>
     {% endif %}
         <td>{{change.number}}{% if change.queue_number > 0 %} ({{change.queue_number}}){% endif %}</td>
         <td>{{change.total}}</td>
