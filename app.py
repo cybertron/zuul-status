@@ -157,11 +157,8 @@ def process_request(request):
             url = data['url']
             # Read it once so it's consistent
             current_time = time.time()
-            try:
-                j = data['jobs'][0]
-            except IndexError:
-                j = {'launch_time': current_time}
-            total = (current_time - (j['launch_time'] or current_time)) * 1000
+            start_time = data['enqueue_time'] or current_time * 1000
+            total = current_time * 1000 - start_time
             total = _format_time(total)
             change_data = {'number': counter,
                            'queue_number': queue_counter,
