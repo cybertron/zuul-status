@@ -192,20 +192,29 @@ def process_request(request):
                     shortname = shortname.split('centos-7-')[1]
                 elapsed = _format_time(job['elapsed_time'])
                 style = 'color: %s; font-weight: %s' % (color, weight)
-                # At max capacity, a job should finish once per completion_rate
-                # minutes on average.
-                completion_rate = 60. / (float(max_jobs) / JOB_TIME_HOURS)
-                if not job['elapsed_time']:
-                    queue_time = int((job_counter - complete) * completion_rate * 60 * 1000)
+                if queue_name == 'check-tripleo':
+                    # At max capacity, a job should finish once per completion_rate
+                    # minutes on average.
+                    completion_rate = 60. / (float(max_jobs) / JOB_TIME_HOURS)
+                    if not job['elapsed_time']:
+                        queue_time = int((job_counter - complete) * completion_rate * 60 * 1000)
+                    else:
+                        if job['result']:
+                            queue_time = 0
+                        else:
+                            queue_time = JOB_TIME_HOURS * 60 * 60 * 1000 - job['elapsed_time']
                 else:
                     if job['result']:
                         queue_time = 0
+                    elif job['estimated_time'] and job['elapsed_time']:
+                        queue_time = job['estimated_time'] * 1000 - job['elapsed_time']
                     else:
-                        queue_time = JOB_TIME_HOURS * 60 * 60 * 1000 - job['elapsed_time']
-                if queue_name not in ['check-tripleo', 'experimental-tripleo']:
-                    queue_time = 0
+                        queue_time = None
                 # Estimated time to complete
-                etc = _format_time(max(queue_time, 0))
+                if queue_time is not None:
+                    etc = _format_time(max(queue_time, 0))
+                else:
+                    etc = '??:??'
                 job_counter += 1
                 job_data = {'number': job_counter,
                             'elapsed': elapsed,
