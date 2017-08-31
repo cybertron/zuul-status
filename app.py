@@ -151,8 +151,11 @@ def process_request(request):
             continue
         counter += 1
         queue_counter = 0
-        for data in change['heads'][0]:
-            if len(change['heads'][0]) > 1:
+        all_heads = []
+        for h in change['heads']:
+            all_heads += h
+        for data in all_heads:
+            if len(all_heads) > 1:
                 queue_counter += 1
             url = data['url']
             # Read it once so it's consistent
