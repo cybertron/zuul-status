@@ -98,13 +98,13 @@ def _get_max_jobs():
         return max_jobs_cache
 
     print 'Refreshing nodepool data'
-    data = _get_remote_data('http://git.openstack.org/cgit/openstack-infra/project-config/plain/nodepool/nodepool.yaml',
+    data = _get_remote_data('http://git.openstack.org/cgit/openstack-infra/project-config/plain/nodepool/nl01.openstack.org.yaml',
                             'yaml')
     providers = data['providers']
     max_jobs = 0
     for cloud in TRIPLEO_TEST_CLOUDS:
         current = [c for c in providers if c['name'] == cloud][0]
-        max_jobs += current['max-servers']
+        max_jobs += current['pools'][0]['max-servers']
     max_jobs_last_update = time.time()
     max_jobs_cache = max_jobs
     return max_jobs
