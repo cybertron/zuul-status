@@ -87,7 +87,7 @@ def _get_remote_data(address, datatype='json'):
 
 
 def _get_zuul_status():
-    return _get_remote_data('http://zuul.openstack.org/status.json')
+    return _get_remote_data('http://zuulv3.openstack.org/status.json')
 
 
 def _get_max_jobs():
