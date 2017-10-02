@@ -181,8 +181,9 @@ def process_request(request):
                     result = job['result']
                     color = GREEN
                     if result is not None:
-                        if result == 'FAILURE':
-                            color = RED
+                        color = RED
+                        if result == 'SUCCESS':
+                            color = GREEN
                         weight = 'bold'
                         link = job['report_url']
                         complete += 1
