@@ -85,6 +85,11 @@ Failed to retrieve queue status due to error:<br>
     {% if queue_name == 'check-tripleo' %}<td>{{queue_time}}</td>{% endif %}
 </tr>
 </table>
+<form method='get' action='/?queue={{queue_name}}'>
+<input type='hidden' name='queue' value='{{queue_name}}'>
+<input type='text' name='filter' value='{{filter_text}}'>
+<input type='submit' value='Filter'>
+</form>
 <table class='sectionarea'>
     <tr>
         <td>#</td><td>Elapsed</td><td>Change #</td><td>Project</td><td>User</td>

@@ -119,6 +119,16 @@ def _format_time(ms):
     return '%02d:%02d' % (h, m)
 
 
+def matches_filter(job, change_data, filter_text):
+    if not filter_text:
+        return True
+    return (filter_text in job.get('name', '') or
+            filter_text in change_data['id'] or
+            filter_text in change_data['project'] or
+            filter_text in change_data['user']
+            )
+
+
 def process_request(request):
     """Return the appropriate response data for a request
 
@@ -136,6 +146,7 @@ def process_request(request):
         values = {'error': str(e)}
         return t, values
     queue_name = request.params.get('queue', 'check-tripleo')
+    filter_text = request.params.get('filter', '')
     pipeline = [p for p in zuul_data['pipelines']
                 if p['name'] == queue_name][0]
     counter = 0
@@ -171,9 +182,13 @@ def process_request(request):
                            'project': data['project'],
                            'user': data['owner']['username'],
                            }
+            if not matches_filter({}, change_data, filter_text):
+                continue
 
             change_data['jobs'] = []
             for job in data['jobs']:
+                if not matches_filter(job, change_data, filter_text):
+                    continue
                 color = BLUE
                 weight = 'normal'
                 link = job['url'] or ''
@@ -243,6 +258,7 @@ def process_request(request):
     values['job_red'] = RED
     values['job_green'] = GREEN
     values['job_blue'] = BLUE
+    values['filter_text'] = filter_text
 
     return t, values
 
