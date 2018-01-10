@@ -268,11 +268,12 @@ def zuul_status(request):
     template, params = process_request(request)
     return response.Response(template.render(**params))
 
+
+conf = config.Configurator()
+conf.add_route('zuul_status', '/')
+conf.scan()
+app = conf.make_wsgi_app()
 if __name__ == '__main__':
-    conf = config.Configurator()
-    conf.add_route('zuul_status', '/')
-    conf.scan()
-    app = conf.make_wsgi_app()
     ip = os.environ['OPENSHIFT_PYTHON_IP']
     port = int(os.environ['OPENSHIFT_PYTHON_PORT'])
     server = make_server(ip, port, app)
