@@ -98,7 +98,7 @@ def _get_max_jobs():
         return max_jobs_cache
 
     print 'Refreshing nodepool data'
-    data = _get_remote_data('http://git.openstack.org/cgit/openstack-infra/project-config/plain/nodepool/nl01.openstack.org.yaml',
+    data = _get_remote_data('http://git.openstack.org/cgit/openstack-infra/project-config/plain/nodepool/nl03.openstack.org.yaml',
                             'yaml')
     providers = data['providers']
     max_jobs = 0
