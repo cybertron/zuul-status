@@ -105,6 +105,10 @@ def _get_max_jobs():
     for cloud in TRIPLEO_TEST_CLOUDS:
         current = [c for c in providers if c['name'] == cloud][0]
         max_jobs += current['pools'][0]['max-servers']
+    # max_jobs of 0 will cause divide by 0 errors
+    if max_jobs == 0:
+        print 'Failed to retrieve max job value'
+        max_jobs = 1
     max_jobs_last_update = time.time()
     max_jobs_cache = max_jobs
     return max_jobs
