@@ -47,6 +47,7 @@ GRAPHITE_TIME_HOURS = 2.22
 # Add about 15 minutes for the stuff that happens before and after
 JOB_TIME_HOURS = GRAPHITE_TIME_HOURS + .25
 TRIPLEO_TEST_CLOUDS = ['tripleo-test-cloud-rh1']
+OPENSTACK_ZUUL = 'http://zuul.openstack.org/status.json'
 # Base color codes
 RED='be1400'
 GREEN='008800'
@@ -86,8 +87,8 @@ def _get_remote_data(address, datatype='json'):
         return yaml.safe_load(data)
 
 
-def _get_zuul_status():
-    return _get_remote_data('http://zuul.openstack.org/status.json')
+def _get_zuul_status(zuul_addr=OPENSTACK_ZUUL):
+    return _get_remote_data(zuul_addr)
 
 
 def _get_max_jobs():
@@ -142,9 +143,10 @@ def process_request(request):
     loader = jinja2.FileSystemLoader('templates')
     env = jinja2.Environment(loader=loader)
     t = env.get_template('zuul-status.jinja2')
+    zuul_addr = request.params.get('zuul', OPENSTACK_ZUUL)
 
     try:
-        zuul_data = _get_zuul_status()
+        zuul_data = _get_zuul_status(zuul_addr)
         max_jobs = _get_max_jobs()
     except Exception as e:
         values = {'error': str(e)}
