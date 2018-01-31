@@ -46,7 +46,6 @@ from wsgiref.simple_server import make_server
 GRAPHITE_TIME_HOURS = 2.22
 # Add about 15 minutes for the stuff that happens before and after
 JOB_TIME_HOURS = GRAPHITE_TIME_HOURS + .25
-TRIPLEO_TEST_CLOUDS = ['tripleo-test-cloud-rh1']
 OPENSTACK_ZUUL = 'http://zuul.openstack.org/status.json'
 # Base color codes
 RED='be1400'
@@ -91,30 +90,6 @@ def _get_zuul_status(zuul_addr=OPENSTACK_ZUUL):
     return _get_remote_data(zuul_addr)
 
 
-def _get_max_jobs():
-    """Read max jobs from the nodepool config"""
-    # Only refresh data every 30 minutes
-    global max_jobs_last_update, max_jobs_cache
-    if time.time() - max_jobs_last_update < 30 * 60:
-        return max_jobs_cache
-
-    print 'Refreshing nodepool data'
-    data = _get_remote_data('http://git.openstack.org/cgit/openstack-infra/project-config/plain/nodepool/nl03.openstack.org.yaml',
-                            'yaml')
-    providers = data['providers']
-    max_jobs = 0
-    for cloud in TRIPLEO_TEST_CLOUDS:
-        current = [c for c in providers if c['name'] == cloud][0]
-        max_jobs += current['pools'][0]['max-servers']
-    # max_jobs of 0 will cause divide by 0 errors
-    if max_jobs == 0:
-        print 'Failed to retrieve max job value'
-        max_jobs = 1
-    max_jobs_last_update = time.time()
-    max_jobs_cache = max_jobs
-    return max_jobs
-
-
 def _format_time(ms):
     if ms is None:
         return '??:??'
@@ -147,11 +122,10 @@ def process_request(request):
 
     try:
         zuul_data = _get_zuul_status(zuul_addr)
-        max_jobs = _get_max_jobs()
     except Exception as e:
         values = {'error': str(e)}
         return t, values
-    queue_name = request.params.get('queue', 'check-tripleo')
+    queue_name = request.params.get('queue', 'gate')
     filter_text = request.params.get('filter', '')
     pipeline = [p for p in zuul_data['pipelines']
                 if p['name'] == queue_name][0]
@@ -254,7 +228,6 @@ def process_request(request):
                 change_data['jobs'].append(job_data)
             values['changes'].append(change_data)
     values['running'] = running
-    values['max_jobs'] = int(max_jobs)
     values['queued'] = queued
     values['complete'] = complete
     values['active'] = running + queued
