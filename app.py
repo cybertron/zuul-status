@@ -253,8 +253,13 @@ conf.add_route('zuul_status', '/')
 conf.scan()
 app = conf.make_wsgi_app()
 if __name__ == '__main__':
-    ip = os.environ['OPENSHIFT_PYTHON_IP']
-    port = int(os.environ['OPENSHIFT_PYTHON_PORT'])
+    try:
+        ip = os.environ['OPENSHIFT_PYTHON_IP']
+        port = int(os.environ['OPENSHIFT_PYTHON_PORT'])
+    except KeyError:
+        # OpenShift 3 doesn't believe in backwards compatibility
+        ip = '0.0.0.0'
+        port = 8080
     server = make_server(ip, port, app)
     server.serve_forever()
 
