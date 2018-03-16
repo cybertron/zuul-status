@@ -188,7 +188,7 @@ def process_request(request):
                     queued += 1
                 # Relative links need to be rewritten to point at the zuul server
                 if not (link.startswith('http') or link.startswith('telnet')):
-                    link = 'http://zuulv3.openstack.org/%s' % link
+                    link = 'http://zuul.openstack.org/%s' % link
                 shortname = job['name']
                 if 'centos-7-' in job['name']:
                     shortname = shortname.split('centos-7-')[1]
