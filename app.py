@@ -238,6 +238,8 @@ def process_request(request):
     values['job_green'] = GREEN
     values['job_blue'] = BLUE
     values['filter_text'] = filter_text
+    if zuul_addr != OPENSTACK_ZUUL:
+        values['zuul'] = zuul_addr
 
     return t, values
 

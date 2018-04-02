@@ -81,8 +81,11 @@ Failed to retrieve queue status due to error:<br>
 </tr>
 </table>
 
-<form method='get' action='/?queue={{queue_name}}'>
+<form method='get' action='/'>
 <input type='hidden' name='queue' value='{{queue_name}}'>
+{% if zuul %}
+<input type='hidden' name='zuul' value='{{zuul}}'>
+{% endif %}
 <input type='text' name='filter' value='{{filter_text}}'>
 <input type='submit' value='Filter'>
 </form>
