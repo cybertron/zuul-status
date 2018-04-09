@@ -51,6 +51,7 @@ OPENSTACK_ZUUL = 'http://zuul.openstack.org/status'
 RED='be1400'
 GREEN='008800'
 BLUE='1400be'
+KNOWN_QUEUES = ['gate', 'check', 'experimental', 'check-openstack']
 
 max_jobs_last_update = 0
 max_jobs_cache = 0
@@ -127,8 +128,11 @@ def process_request(request):
         return t, values
     queue_name = request.params.get('queue', 'gate')
     filter_text = request.params.get('filter', '')
-    pipeline = [p for p in zuul_data['pipelines']
-                if p['name'] == queue_name][0]
+    queue_names = KNOWN_QUEUES
+    if queue_name != 'all':
+        queue_names = [queue_name]
+    pipelines = [p for p in zuul_data['pipelines']
+                 if p['name'] in queue_names]
     counter = 0
     job_counter = 0
     running = 0
@@ -137,96 +141,97 @@ def process_request(request):
     queue_time = 0
     values = {}
     values['changes'] = []
-    for change in pipeline['change_queues']:
-        if len(change['heads']) == 0:
-            continue
-        counter += 1
-        queue_counter = 0
-        all_heads = []
-        for h in change['heads']:
-            all_heads += h
-        for data in all_heads:
-            if len(all_heads) > 1:
-                queue_counter += 1
-            url = data['url']
-            # Read it once so it's consistent
-            current_time = time.time()
-            start_time = data['enqueue_time'] or current_time * 1000
-            total = current_time * 1000 - start_time
-            total = _format_time(total)
-            change_data = {'number': counter,
-                           'queue_number': queue_counter,
-                           'total': total,
-                           'id': data['id'],
-                           'url': url,
-                           'project': data['project'],
-                           'user': data['owner']['username'],
-                           }
-            if not matches_filter({}, change_data, filter_text):
+    for pl in pipelines:
+        for change in pl['change_queues']:
+            if len(change['heads']) == 0:
                 continue
-
-            change_data['jobs'] = []
-            for job in data['jobs']:
-                if not matches_filter(job, change_data, filter_text):
+            counter += 1
+            queue_counter = 0
+            all_heads = []
+            for h in change['heads']:
+                all_heads += h
+            for data in all_heads:
+                if len(all_heads) > 1:
+                    queue_counter += 1
+                url = data['url']
+                # Read it once so it's consistent
+                current_time = time.time()
+                start_time = data['enqueue_time'] or current_time * 1000
+                total = current_time * 1000 - start_time
+                total = _format_time(total)
+                change_data = {'number': counter,
+                            'queue_number': queue_counter,
+                            'total': total,
+                            'id': data['id'],
+                            'url': url,
+                            'project': data['project'],
+                            'user': data['owner']['username'],
+                            }
+                if not matches_filter({}, change_data, filter_text):
                     continue
-                color = BLUE
-                weight = 'normal'
-                link = job['url'] or ''
-                if job['elapsed_time'] is not None:
-                    result = job['result']
-                    color = GREEN
-                    if result is not None:
-                        color = RED
-                        if result == 'SUCCESS':
-                            color = GREEN
-                        weight = 'bold'
-                        link = job['report_url']
-                        complete += 1
+
+                change_data['jobs'] = []
+                for job in data['jobs']:
+                    if not matches_filter(job, change_data, filter_text):
+                        continue
+                    color = BLUE
+                    weight = 'normal'
+                    link = job['url'] or ''
+                    if job['elapsed_time'] is not None:
+                        result = job['result']
+                        color = GREEN
+                        if result is not None:
+                            color = RED
+                            if result == 'SUCCESS':
+                                color = GREEN
+                            weight = 'bold'
+                            link = job['report_url']
+                            complete += 1
+                        else:
+                            running += 1
                     else:
-                        running += 1
-                else:
-                    queued += 1
-                # Relative links need to be rewritten to point at the zuul server
-                if not (link.startswith('http') or link.startswith('telnet')):
-                    link = 'http://zuul.openstack.org/%s' % link
-                shortname = job['name']
-                if 'centos-7-' in job['name']:
-                    shortname = shortname.split('centos-7-')[1]
-                elapsed = _format_time(job['elapsed_time'])
-                style = 'color: %s; font-weight: %s' % (color, weight)
-                if queue_name == 'check-tripleo':
-                    # At max capacity, a job should finish once per completion_rate
-                    # minutes on average.
-                    completion_rate = 60. / (float(max_jobs) / JOB_TIME_HOURS)
-                    if not job['elapsed_time']:
-                        queue_time = int((job_counter - complete) * completion_rate * 60 * 1000)
+                        queued += 1
+                    # Relative links need to be rewritten to point at the zuul server
+                    if not (link.startswith('http') or link.startswith('telnet')):
+                        link = 'http://zuul.openstack.org/%s' % link
+                    shortname = job['name']
+                    if 'centos-7-' in job['name']:
+                        shortname = shortname.split('centos-7-')[1]
+                    elapsed = _format_time(job['elapsed_time'])
+                    style = 'color: %s; font-weight: %s' % (color, weight)
+                    if queue_name == 'check-tripleo':
+                        # At max capacity, a job should finish once per completion_rate
+                        # minutes on average.
+                        completion_rate = 60. / (float(max_jobs) / JOB_TIME_HOURS)
+                        if not job['elapsed_time']:
+                            queue_time = int((job_counter - complete) * completion_rate * 60 * 1000)
+                        else:
+                            if job['result']:
+                                queue_time = 0
+                            else:
+                                queue_time = JOB_TIME_HOURS * 60 * 60 * 1000 - job['elapsed_time']
                     else:
                         if job['result']:
                             queue_time = 0
+                        elif job['estimated_time'] and job['elapsed_time']:
+                            queue_time = job['estimated_time'] * 1000 - job['elapsed_time']
                         else:
-                            queue_time = JOB_TIME_HOURS * 60 * 60 * 1000 - job['elapsed_time']
-                else:
-                    if job['result']:
-                        queue_time = 0
-                    elif job['estimated_time'] and job['elapsed_time']:
-                        queue_time = job['estimated_time'] * 1000 - job['elapsed_time']
+                            queue_time = None
+                    # Estimated time to complete
+                    if queue_time is not None:
+                        etc = _format_time(max(queue_time, 0))
                     else:
-                        queue_time = None
-                # Estimated time to complete
-                if queue_time is not None:
-                    etc = _format_time(max(queue_time, 0))
-                else:
-                    etc = '??:??'
-                job_counter += 1
-                job_data = {'number': job_counter,
-                            'elapsed': elapsed,
-                            'etc': etc,
-                            'name': shortname,
-                            'link': link,
-                            'style': style,
-                            }
-                change_data['jobs'].append(job_data)
-            values['changes'].append(change_data)
+                        etc = '??:??'
+                    job_counter += 1
+                    job_data = {'number': job_counter,
+                                'elapsed': elapsed,
+                                'etc': etc,
+                                'name': shortname,
+                                'link': link,
+                                'style': style,
+                                }
+                    change_data['jobs'].append(job_data)
+                values['changes'].append(change_data)
     values['running'] = running
     values['queued'] = queued
     values['complete'] = complete
