@@ -123,16 +123,16 @@ def process_request(request):
 
     try:
         zuul_data = _get_zuul_status(zuul_addr)
+        queue_name = request.params.get('queue', 'gate')
+        filter_text = request.params.get('filter', '')
+        queue_names = KNOWN_QUEUES
+        if queue_name != 'all':
+            queue_names = [queue_name]
+        pipelines = [p for p in zuul_data['pipelines']
+                    if p['name'] in queue_names]
     except Exception as e:
-        values = {'error': str(e)}
+        values = {'error': repr(e)}
         return t, values
-    queue_name = request.params.get('queue', 'gate')
-    filter_text = request.params.get('filter', '')
-    queue_names = KNOWN_QUEUES
-    if queue_name != 'all':
-        queue_names = [queue_name]
-    pipelines = [p for p in zuul_data['pipelines']
-                 if p['name'] in queue_names]
     counter = 0
     job_counter = 0
     running = 0
