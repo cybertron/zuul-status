@@ -23,8 +23,9 @@ if 'OPENSHIFT_PYTHON_DIR' in os.environ:
     except IOError:
         pass
 
-# requires: pyramid, jinja2
+# requires: pyramid, jinja2, psutil
 import cStringIO
+import datetime
 import gzip
 import json
 import sys
@@ -35,6 +36,7 @@ import yaml
 sys.path.insert(0, os.path.dirname(__file__))
 
 import jinja2
+import psutil
 from pyramid import config
 from pyramid import renderers
 from pyramid import response
@@ -243,6 +245,10 @@ def process_request(request):
     values['job_green'] = GREEN
     values['job_blue'] = BLUE
     values['filter_text'] = filter_text
+    p = psutil.Process(os.getpid())
+    uptime_seconds = time.time() - p.create_time()
+    uptime = datetime.timedelta(seconds=uptime_seconds)
+    values['app_uptime'] = str(uptime)
     if zuul_addr != OPENSTACK_ZUUL:
         values['zuul'] = zuul_addr
 
