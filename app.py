@@ -246,7 +246,7 @@ def process_request(request):
     values['job_blue'] = BLUE
     values['filter_text'] = filter_text
     p = psutil.Process(os.getpid())
-    uptime_seconds = time.time() - p.create_time()
+    uptime_seconds = int(time.time() - p.create_time())
     uptime = datetime.timedelta(seconds=uptime_seconds)
     values['app_uptime'] = str(uptime)
     if zuul_addr != OPENSTACK_ZUUL:
