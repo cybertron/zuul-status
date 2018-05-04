@@ -161,13 +161,16 @@ def process_request(request):
                 start_time = data['enqueue_time'] or current_time * 1000
                 total = current_time * 1000 - start_time
                 total = _format_time(total)
+                user = data['owner']['name']
+                if 'username' in data['owner']:
+                    user += ' (%s)' % data['owner']['username']
                 change_data = {'number': counter,
                             'queue_number': queue_counter,
                             'total': total,
                             'id': data['id'],
                             'url': url,
                             'project': data['project'],
-                            'user': data['owner']['username'],
+                            'user': user,
                             }
                 if not matches_filter({}, change_data, filter_text):
                     continue
