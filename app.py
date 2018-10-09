@@ -48,7 +48,7 @@ from wsgiref.simple_server import make_server
 GRAPHITE_TIME_HOURS = 2.22
 # Add about 15 minutes for the stuff that happens before and after
 JOB_TIME_HOURS = GRAPHITE_TIME_HOURS + .25
-OPENSTACK_ZUUL = 'http://zuul.openstack.org/status'
+OPENSTACK_ZUUL = 'http://zuul.openstack.org/api/status'
 # Base color codes
 RED='be1400'
 GREEN='008800'
