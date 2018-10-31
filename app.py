@@ -23,7 +23,9 @@ if 'OPENSHIFT_PYTHON_DIR' in os.environ:
     except IOError:
         pass
 
-# requires: pyramid, jinja2, psutil
+# requires: pyramid, jinja2, psutil, matplotlib
+import collections
+import copy
 import cStringIO
 import datetime
 import gzip
@@ -36,6 +38,9 @@ import yaml
 sys.path.insert(0, os.path.dirname(__file__))
 
 import jinja2
+import matplotlib
+matplotlib.use('Agg')
+from matplotlib import pyplot
 import psutil
 from pyramid import config
 from pyramid import renderers
@@ -57,6 +62,14 @@ KNOWN_QUEUES = ['gate', 'check', 'experimental', 'check-openstack']
 
 max_jobs_last_update = 0
 max_jobs_cache = 0
+
+total_template = {'running': 0, 'queued': 0, 'complete': 0}
+job_total = {'gate': copy.copy(total_template),
+             'check': copy.copy(total_template),
+             'experimental': copy.copy(total_template),
+             'timestamp': None,
+             }
+job_totals = collections.deque(maxlen=1000)
 
 
 class DataRetrievalFailed(Exception):
@@ -117,6 +130,8 @@ def process_request(request):
 
     Returns a tuple of (template, params) representing the appropriate
     data to put in a response to request.
+
+    This handles requests for a list of changes.
     """
     loader = jinja2.FileSystemLoader('templates')
     env = jinja2.Environment(loader=loader)
@@ -151,6 +166,7 @@ def process_request(request):
             queue_counter = 0
             all_heads = []
             for h in change['heads']:
+                # h is a list, we're just concatenating all of them
                 all_heads += h
             for data in all_heads:
                 if len(all_heads) > 1:
@@ -251,14 +267,105 @@ def process_request(request):
     values['job_green'] = GREEN
     values['job_blue'] = BLUE
     values['filter_text'] = filter_text
-    p = psutil.Process(os.getpid())
-    uptime_seconds = int(time.time() - p.create_time())
-    uptime = datetime.timedelta(seconds=uptime_seconds)
-    values['app_uptime'] = str(uptime)
+    calculate_uptime(values)
     if zuul_addr != OPENSTACK_ZUUL:
         values['zuul'] = zuul_addr
 
     return t, values
+
+
+def calculate_uptime(values):
+    p = psutil.Process(os.getpid())
+    uptime_seconds = int(time.time() - p.create_time())
+    uptime = datetime.timedelta(seconds=uptime_seconds)
+    values['app_uptime'] = str(uptime)
+
+
+def process_graphs(request):
+    """Return the appropriate response data for a request
+
+    Returns a tuple of (template, params) representing the appropriate
+    data to put in a response to request.
+
+    This handles requests for graphs of job counts.
+    """
+    loader = jinja2.FileSystemLoader('templates')
+    env = jinja2.Environment(loader=loader)
+    t = env.get_template('queue-graphs.jinja2')
+    zuul_addr = request.params.get('zuul', OPENSTACK_ZUUL)
+    values = {}
+    new_total = copy.deepcopy(job_total)
+    new_total['timestamp'] = datetime.datetime.utcnow()
+
+    try:
+        zuul_data = _get_zuul_status(zuul_addr)
+    except Exception as e:
+        values = {'error': repr(e)}
+        return t, values
+
+    for queue in KNOWN_QUEUES[:3]:
+        pipelines = [p for p in zuul_data['pipelines']
+                     if p['name'] == queue]
+        for pl in pipelines:
+            for change in pl['change_queues']:
+                if len(change['heads']) == 0:
+                    continue
+                all_heads = []
+                for h in change['heads']:
+                    # h is a list, we're just concatenating all of them
+                    all_heads += h
+                for data in all_heads:
+                    for job in data['jobs']:
+                        if job['elapsed_time'] is not None:
+                            if job['result'] is not None:
+                                new_total[queue]['complete'] += 1
+                            else:
+                                new_total[queue]['running'] += 1
+                        else:
+                            new_total[queue]['queued'] += 1
+
+    # TODO: persist this data on disk somewhere
+    job_totals.append(new_total)
+
+    create_graph(KNOWN_QUEUES[:3],
+                 ['queued', 'running', 'complete'],
+                 values,
+                 'all_data',
+                 'All')
+    create_graph(['gate'],
+                 ['queued', 'running', 'complete'],
+                 values,
+                 'gate_data',
+                 'Gate')
+    create_graph(['check'],
+                 ['queued', 'running', 'complete'],
+                 values,
+                 'check_data',
+                 'Check')
+
+    calculate_uptime(values)
+
+    return t, values
+
+
+def create_graph(queues, types, values, name, title):
+    pyplot.figure(figsize=(10, 5))
+    for queue in queues:
+        for t in types:
+            x = matplotlib.dates.date2num(
+                [(i['timestamp']) for i in job_totals])
+            y = [i[queue][t] for i in job_totals]
+            pyplot.plot_date(x, y, label='%s-%s' % (queue, t),
+                             linestyle='solid',
+                             marker='None')
+            pyplot.xlabel('time')
+            pyplot.ylabel('count')
+    pyplot.legend()
+    pyplot.title(title)
+    img = cStringIO.StringIO()
+    pyplot.savefig(img, format='svg')
+    pyplot.close()
+    values[name] = img.getvalue().decode('utf-8')
 
 
 @view.view_config(route_name='zuul_status')
@@ -267,8 +374,15 @@ def zuul_status(request):
     return response.Response(template.render(**params))
 
 
+@view.view_config(route_name='queue_graphs')
+def queue_graphs(request):
+    template, params = process_graphs(request)
+    return response.Response(template.render(**params))
+
+
 conf = config.Configurator()
 conf.add_route('zuul_status', '/')
+conf.add_route('queue_graphs', '/graphs')
 conf.scan()
 app = conf.make_wsgi_app()
 if __name__ == '__main__':

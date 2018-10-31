@@ -2,3 +2,4 @@ pyramid
 jinja2
 PyYAML
 psutil
+matplotlib
