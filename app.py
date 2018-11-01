@@ -294,38 +294,50 @@ def process_graphs(request):
     t = env.get_template('queue-graphs.jinja2')
     zuul_addr = request.params.get('zuul', OPENSTACK_ZUUL)
     values = {}
-    new_total = copy.deepcopy(job_total)
-    new_total['timestamp'] = datetime.datetime.utcnow()
 
-    try:
-        zuul_data = _get_zuul_status(zuul_addr)
-    except Exception as e:
-        values = {'error': repr(e)}
-        return t, values
+    force = False
+    if len(job_totals):
+        last = job_totals[-1]
+        if len(job_totals) < 2:
+            force = True
+    else:
+        force = True
+    # I have a cron job set up to hit this endpoint every 5 minutes, so I'm
+    # setting the refresh time to 4 so it will always refresh.
+    if (force or datetime.datetime.utcnow() - last['timestamp'] >
+            datetime.timedelta(minutes=4)):
+        new_total = copy.deepcopy(job_total)
+        new_total['timestamp'] = datetime.datetime.utcnow()
 
-    for queue in KNOWN_QUEUES[:3]:
-        pipelines = [p for p in zuul_data['pipelines']
-                     if p['name'] == queue]
-        for pl in pipelines:
-            for change in pl['change_queues']:
-                if len(change['heads']) == 0:
-                    continue
-                all_heads = []
-                for h in change['heads']:
-                    # h is a list, we're just concatenating all of them
-                    all_heads += h
-                for data in all_heads:
-                    for job in data['jobs']:
-                        if job['elapsed_time'] is not None:
-                            if job['result'] is not None:
-                                new_total[queue]['complete'] += 1
+        try:
+            zuul_data = _get_zuul_status(zuul_addr)
+        except Exception as e:
+            values = {'error': repr(e)}
+            return t, values
+
+        for queue in KNOWN_QUEUES[:3]:
+            pipelines = [p for p in zuul_data['pipelines']
+                        if p['name'] == queue]
+            for pl in pipelines:
+                for change in pl['change_queues']:
+                    if len(change['heads']) == 0:
+                        continue
+                    all_heads = []
+                    for h in change['heads']:
+                        # h is a list, we're just concatenating all of them
+                        all_heads += h
+                    for data in all_heads:
+                        for job in data['jobs']:
+                            if job['elapsed_time'] is not None:
+                                if job['result'] is not None:
+                                    new_total[queue]['complete'] += 1
+                                else:
+                                    new_total[queue]['running'] += 1
                             else:
-                                new_total[queue]['running'] += 1
-                        else:
-                            new_total[queue]['queued'] += 1
+                                new_total[queue]['queued'] += 1
 
-    # TODO: persist this data on disk somewhere
-    job_totals.append(new_total)
+        # TODO: persist this data on disk somewhere
+        job_totals.append(new_total)
 
     create_graph(KNOWN_QUEUES[:3],
                  ['queued', 'running', 'complete'],
