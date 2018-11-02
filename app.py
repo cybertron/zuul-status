@@ -361,7 +361,7 @@ def process_graphs(request):
 
 
 def create_graph(queues, types, values, name, title):
-    pyplot.figure(figsize=(10, 5))
+    pyplot.figure(figsize=(13, 5))
     for queue in queues:
         for t in types:
             x = matplotlib.dates.date2num(
